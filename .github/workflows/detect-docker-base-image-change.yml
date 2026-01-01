@@ -1,0 +1,60 @@
+name: Detect docker base image updates
+
+on:
+  schedule:
+    - cron: '15 3 * * *'
+  workflow_dispatch:
+
+jobs:
+  check-update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      needs_updating: ${{ steps.check.outputs.needs-updating }}
+      diff_images: ${{ steps.check.outputs.diff-images }}
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Check if update available
+        id: check
+        uses: lucacome/docker-image-update-checker@v3
+        with:
+          base-image: alpine:latest
+          image: ghcr.io/${{ github.repository }}:master
+
+      - name: Update changelog
+        run: |
+          TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          NEEDS_UPDATE="${{ steps.check.outputs.needs-updating }}"
+          
+          # Create changelog file if it doesn't exist
+          if [ ! -f "DOCKER_CHANGELOG.md" ]; then
+            echo "# Docker Base Image Check Changelog" > DOCKER_CHANGELOG.md
+            echo "" >> DOCKER_CHANGELOG.md
+          fi
+          
+          # Create log entry
+          if [ "$NEEDS_UPDATE" == "true" ]; then          
+            echo "* $TIMESTAMP: Base image updated: ${{ steps.check.outputs.diff-images }}" >> DOCKER_CHANGELOG.md
+          fi
+      
+      - name: Commit and push changelog
+        run: |
+          git config --global user.name 'GitHub Actions'
+          git config --global user.email 'actions@github.com'
+          git add DOCKER_CHANGELOG.md
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Update Docker base image changelog" && git push)
+
+  call-build:
+    needs: check-update
+    if: needs.check-update.outputs.needs_updating == 'true'
+    secrets: inherit
+    uses: ./.github/workflows/build-docker-image.yml
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      security-events: write
