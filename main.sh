@@ -87,7 +87,7 @@ update_conf_file() {
     finalize_conf_file
 }
 
-mkdir /tmp/ipv4 /tmp/ipv6
+mkdir -p /tmp/ipv4 /tmp/ipv6
 update_conf_file
 
 while nft -cf "$CONF_FILE"; do
