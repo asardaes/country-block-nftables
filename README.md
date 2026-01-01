@@ -6,3 +6,5 @@ Required environment variables:
 - `COUNTRIES`: space-separated list of 2-letter country codes *but lower-case*
 
 See [sample compose file](compose.yaml).
+
+IMPORTANT: currently the rules use the `netdev` family, so they'll even block incoming traffic that's related to outgoing requests.
