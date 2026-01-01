@@ -1,0 +1,14 @@
+services:
+  countryblock:
+    container_name: countryblock
+    image: ghcr.io/asardaes/country-block-nftables:main
+    restart: unless-stopped
+    environment:
+      INTERFACE: ens3
+      COUNTRIES: "mx de"
+    volumes:
+      - ./tmp:/tmp
+    cap_add:
+      - NET_ADMIN
+    userns_mode: host
+    network_mode: host
