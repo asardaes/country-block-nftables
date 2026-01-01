@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -euo pipefail
 
-trap 'nft destroy table netdev countryblock; if pgrep curl; then pgrep curl | kill -INT; fi; kill -INT $!; exit 0' INT TERM KILL
+trap 'nft destroy table netdev countryblock; if pgrep curl; then pgrep curl | xargs kill -INT; fi; kill -INT $!; exit 0' INT TERM KILL
 
 CONF_FILE=/tmp/countryblock.nft
 
