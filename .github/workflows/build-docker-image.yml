@@ -2,7 +2,7 @@ name: Docker build image
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "main" ]
     # Only trigger on master when these paths change
     paths:
       - Dockerfile
