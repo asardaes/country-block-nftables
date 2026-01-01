@@ -2,7 +2,7 @@ A simple Alpine container with a script that uses [ipdeny](https://www.ipdeny.co
 
 Required environment variables:
 
-- `INTERFACE`: name of the network interface (see `sudo ip link show`)
+- `INTERFACE`: name of the network interface that shall be the filtering target (see `sudo ip link show`)
 - `COUNTRIES`: space-separated list of 2-letter country codes *but lower-case*
 
 See [sample compose file](compose.yaml).
