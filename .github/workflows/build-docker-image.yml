@@ -5,7 +5,8 @@ on:
     branches: [ "master" ]
     # Only trigger on master when these paths change
     paths:
-      - 'Dockerfile'
+      - Dockerfile
+      - main.sh
     # Publish semver tags as releases.
     tags: [ 'v*' ]
   workflow_call:

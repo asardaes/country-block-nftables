@@ -1,6 +1,8 @@
 #!/usr/bin/env sh
 set -euo pipefail
 
+trap 'nft destroy table netdev countryblock; if pgrep curl; then pgrep curl | kill -INT; fi; kill -INT $!; exit 0' INT TERM KILL
+
 CONF_FILE=/tmp/countryblock.nft
 
 reset_conf_file() {
@@ -87,7 +89,6 @@ update_conf_file() {
 
 mkdir /tmp/ipv4 /tmp/ipv6
 update_conf_file
-trap 'nft destroy table netdev countryblock' INT TERM KILL
 
 while nft -cf "$CONF_FILE"; do
     nft -f "$CONF_FILE"
