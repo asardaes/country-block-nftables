@@ -4,6 +4,7 @@ Required environment variables:
 
 - `INTERFACE`: name of the network interface that shall be the filtering target (see `sudo ip link show`)
 - `COUNTRIES`: space-separated list of 2-letter country codes *but lower-case*
+- `UPDATE_PERIOD`: something that `sleep` understands, defaults to `24h`
 
 Optionally, specify a file in `IP_WHITELIST_FILE` with valid rules that should be inserted before the dropping rules.
 It should contain lines like:
