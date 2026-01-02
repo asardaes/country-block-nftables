@@ -64,12 +64,17 @@ update_ipv6() {
 }
 
 finalize_conf_file() {
+    # does netdev have a single priority? https://wiki.nftables.org/wiki-nftables/index.php/Netfilter_hooks#Priority_within_hook
     echo "  chain countryblock-ingress-chain {
-    type filter hook ingress device ${INTERFACE} priority -300; policy accept;
+    type filter hook ingress device ${INTERFACE} priority 0; policy accept;
     ip protocol tcp tcp flags ack accept
     ip protocol tcp tcp flags syn,ack accept
     ip6 nexthdr tcp tcp flags ack accept
     ip6 nexthdr tcp tcp flags syn,ack accept" >>"$CONF_FILE"
+
+    if [ -s "$IP_WHITELIST_FILE" ]; then
+         cat "$IP_WHITELIST_FILE" >>"$CONF_FILE"
+    fi
 
     for country in $COUNTRIES; do
         if [ -s "/tmp/ipv4/${country}-aggregated.zone" ]; then
