@@ -92,7 +92,7 @@ finalize_conf_file() {
     echo "  chain countryblock-ingress-chain {
     type filter hook ingress device ${INTERFACE} priority 0; policy accept;" >>"$CONF_FILE"
 
-    if [ -s "$IP_WHITELIST_FILE" ]; then
+    if [ -s "${IP_WHITELIST_FILE:-/non/existing/file}" ]; then
          cat "$IP_WHITELIST_FILE" >>"$CONF_FILE"
     fi
 
