@@ -5,9 +5,8 @@ trap 'nft destroy table netdev countryblock; if pgrep curl; then pgrep curl | xa
 
 CONF_FILE=/tmp/countryblock.nft
 
-reset_conf_file() {
-    echo "destroy table netdev countryblock" >"$CONF_FILE"
-    echo "table netdev countryblock {" >>"$CONF_FILE"
+curl_dl() {
+    curl -fsS -m 15 "$1" -o "$2" -z "$2" || return 1
 }
 
 process_zone_file() {
@@ -34,7 +33,7 @@ update_ipv4() {
         local zonefile_name="${country}-aggregated.zone"
         local zonefile_remote="https://www.ipdeny.com/ipblocks/data/aggregated/${zonefile_name}"
         local zonefile="/tmp/ipv4/${zonefile_name}"
-        curl -fsS -m 15 "$zonefile_remote" -o "$zonefile" -z "$zonefile" || return 1
+        curl_dl "$zonefile_remote" "$zonefile" || return 1
         printf "Downloaded IPv4 %b zone file %b to %b\n" "$country" "$zonefile_remote" "$zonefile"
 
         # Add each IP address from the downloaded list into the ipset
@@ -51,7 +50,7 @@ update_ipv6() {
         local zonefile_name="${country}-aggregated.zone"
         local zonefile_remote="https://www.ipdeny.com/ipv6/ipaddresses/aggregated/${zonefile_name}"
         local zonefile="/tmp/ipv6/${zonefile_name}"
-        curl -fsS -m 15 "$zonefile_remote" -o "$zonefile" -z "$zonefile" || return 1
+        curl_dl "$zonefile_remote" "$zonefile" || return 1
         printf "Downloaded IPv6 %b zone file %b to %b\n" "$country" "$zonefile_remote" "$zonefile"
 
         # Add each IP address from the downloaded list into the ipset
@@ -88,7 +87,8 @@ finalize_conf_file() {
 }
 
 update_conf_file() {
-    reset_conf_file
+    echo "destroy table netdev countryblock" >"$CONF_FILE"
+    echo "table netdev countryblock {" >>"$CONF_FILE"
     update_ipv4 || return 1
     update_ipv6 || return 1
     finalize_conf_file
