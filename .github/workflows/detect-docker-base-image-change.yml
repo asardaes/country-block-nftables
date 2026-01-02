@@ -23,7 +23,7 @@ jobs:
         uses: lucacome/docker-image-update-checker@v3
         with:
           base-image: alpine:latest
-          image: ghcr.io/${{ github.repository }}:master
+          image: ghcr.io/${{ github.repository }}:main
 
       - name: Update changelog
         run: |
