@@ -15,7 +15,7 @@ It should contain lines like:
 See [sample compose file](compose.yaml).
 
 IMPORTANT: the rules currently use the `netdev` family, so they'd even block incoming traffic that's related to outgoing requests.
-To prevent this, there are rules to accept incoming TCP packets with ACK or SYN-ACK flags,
+To prevent this, there are rules to accept incoming TCP packets that have any flag *in addition to* SYN set,
 so you should ensure you have some rules in ip/ip6 tables that drop anything that's not a response using connection tracking:
 
 ```
