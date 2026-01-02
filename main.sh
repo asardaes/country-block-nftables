@@ -4,6 +4,7 @@ set -euo pipefail
 trap 'nft destroy table netdev countryblock; if pgrep curl; then pgrep curl | xargs kill -INT; fi; kill -INT $!; exit 0' INT TERM KILL
 
 CONF_FILE=/tmp/countryblock.nft
+COUNTRIES_STRICT="${COUNTRIES_STRICT:-}"
 
 curl_dl() {
     curl -fsS -m 15 "$1" -o "$2" -z "$2" || return 1
@@ -62,23 +63,48 @@ update_ipv6() {
     done
 }
 
+country_rule_strict() {
+    local country="$1"
+    if [ -s "/tmp/ipv4/${country}-aggregated.zone" ]; then
+        echo "    ip saddr @countryblock-${country}4 drop" >>"$CONF_FILE"
+    fi
+    if [ -s "/tmp/ipv6/${country}-aggregated.zone" ]; then
+        echo "    ip6 saddr @countryblock-${country}6 drop" >>"$CONF_FILE"
+    fi
+    echo "Added strict rules for $country."
+}
+
+country_rule_lenient() {
+    local country="$1"
+    if [ -s "/tmp/ipv4/${country}-aggregated.zone" ]; then
+        echo "    ip protocol udp ip saddr @countryblock-${country}4 drop" >>"$CONF_FILE"
+        echo "    ip protocol tcp tcp flags == syn ip saddr @countryblock-${country}4 drop" >>"$CONF_FILE"
+    fi
+    if [ -s "/tmp/ipv6/${country}-aggregated.zone" ]; then
+        echo "    ip6 nexthdr udp ip6 saddr @countryblock-${country}6 drop" >>"$CONF_FILE"
+        echo "    ip6 nexthdr tcp tcp flags == syn ip6 saddr @countryblock-${country}6 drop" >>"$CONF_FILE"
+    fi
+    echo "Added lenient rules for $country."
+}
+
 finalize_conf_file() {
     # does netdev have a single priority? https://wiki.nftables.org/wiki-nftables/index.php/Netfilter_hooks#Priority_within_hook
     echo "  chain countryblock-ingress-chain {
-    type filter hook ingress device ${INTERFACE} priority 0; policy accept;
-    ip protocol tcp tcp flags ack,psh,urg,fin,rst accept
-    ip6 nexthdr tcp tcp flags ack,psh,urg,fin,rst accept" >>"$CONF_FILE"
+    type filter hook ingress device ${INTERFACE} priority 0; policy accept;" >>"$CONF_FILE"
 
     if [ -s "$IP_WHITELIST_FILE" ]; then
          cat "$IP_WHITELIST_FILE" >>"$CONF_FILE"
     fi
 
     for country in $COUNTRIES; do
-        if [ -s "/tmp/ipv4/${country}-aggregated.zone" ]; then
-            echo "    ip saddr @countryblock-${country}4 drop" >>"$CONF_FILE"
-        fi
-        if [ -s "/tmp/ipv6/${country}-aggregated.zone" ]; then
-            echo "    ip6 saddr @countryblock-${country}6 drop" >>"$CONF_FILE"
+        if [ "$COUNTRIES_STRICT" = "true" ]; then
+            country_rule_strict "$country"
+        elif [ -z "$COUNTRIES_STRICT" ]; then
+            country_rule_lenient "$country"
+        elif echo "$COUNTRIES_STRICT" | grep -E "(^| )${country}( |$)" &>/dev/null; then
+            country_rule_strict "$country"
+        else
+            country_rule_lenient "$country"
         fi
     done
 
