@@ -11,10 +11,10 @@ else
     TABLE_FAMILY="inet"
 fi
 
-trap "set +e; nft destroy table $TABLE_FAMILY countryblock;"' if pgrep curl; then pgrep curl | xargs kill -INT; else kill -INT $!; fi; exit 0' INT TERM EXIT
+trap "set +e; nft destroy table $TABLE_FAMILY countryblock;"' kill -INT $!; exit 0' INT TERM EXIT
 
 curl_dl() {
-    curl -fsS -m 15 "$1" -o "$2" -z "$2" || return 1
+    curl -fsS -m 5 "$1" -o "$2" -z "$2" || return 1
 }
 
 process_zone_file() {
