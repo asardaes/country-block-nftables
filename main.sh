@@ -1,10 +1,17 @@
 #!/usr/bin/env sh
 set -euo pipefail
 
-trap 'set +e; nft destroy table netdev countryblock; if pgrep curl; then pgrep curl | xargs kill -INT; else kill -INT $!; fi; exit 0' INT TERM EXIT
-
 CONF_FILE=/tmp/countryblock.nft
 COUNTRIES_STRICT="${COUNTRIES_STRICT:-}"
+NFT_NETDEV="${NFT_NETDEV:-true}"
+
+if [ "$NFT_NETDEV" = "true" ]; then
+    TABLE_FAMILY="netdev"
+else
+    TABLE_FAMILY="inet"
+fi
+
+trap "set +e; nft destroy table $TABLE_FAMILY countryblock;"' if pgrep curl; then pgrep curl | xargs kill -INT; else kill -INT $!; fi; exit 0' INT TERM EXIT
 
 curl_dl() {
     curl -fsS -m 15 "$1" -o "$2" -z "$2" || return 1
@@ -88,9 +95,14 @@ country_rule_lenient() {
 }
 
 finalize_conf_file() {
-    # does netdev have a single priority? https://wiki.nftables.org/wiki-nftables/index.php/Netfilter_hooks#Priority_within_hook
-    echo "  chain countryblock-ingress-chain {
+    if [ "$NFT_NETDEV" = "true" ]; then
+        # does netdev have a single priority? https://wiki.nftables.org/wiki-nftables/index.php/Netfilter_hooks#Priority_within_hook
+        echo "  chain countryblock-ingress-chain {
     type filter hook ingress device ${INTERFACE} priority 0; policy accept;" >>"$CONF_FILE"
+    else
+        echo "  chain countryblock-input-chain {
+    type filter hook input priority ${INPUT_HOOK_PRIORITY:--50}; policy accept;" >>"$CONF_FILE"
+    fi
 
     if [ -s "${IP_WHITELIST_FILE:-/non/existing/file}" ]; then
          cat "$IP_WHITELIST_FILE" >>"$CONF_FILE"
@@ -113,8 +125,8 @@ finalize_conf_file() {
 }
 
 update_conf_file() {
-    echo "destroy table netdev countryblock" >"$CONF_FILE"
-    echo "table netdev countryblock {" >>"$CONF_FILE"
+    echo "destroy table $TABLE_FAMILY countryblock" >"$CONF_FILE"
+    echo "table $TABLE_FAMILY countryblock {" >>"$CONF_FILE"
     update_ipv4 || return 1
     update_ipv6 || return 1
     finalize_conf_file

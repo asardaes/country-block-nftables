@@ -15,8 +15,11 @@ It should contain lines like:
 
 See [sample compose file](compose.yaml).
 
-IMPORTANT: the rules currently use the `netdev` family, so they'd even block incoming traffic that's related to outgoing requests.
+IMPORTANT: the rules use the `netdev` family by default, so they'd even block incoming traffic that's related to outgoing requests.
 To prevent this, the rules only block packets where only the TCP SYN flag is set.
 If you want to block everything for certain countries, set an environment variable `COUNTRIES_STRICT` with the same format as `COUNTRIES`
 (although potentially with different content).
-If you want to block everything for all `COUNTRIES`, set `COUNTRIES_STRICT` as `true`.
+If you want to block everything for all `COUNTRIES`, set `COUNTRIES_STRICT` to `true`.
+
+If your machine doesn't support `netdev`, set `NFT_NETDEV` to `false` to use an `inet` family instead.
+In that case you can also set `INPUT_HOOK_PRIORITY` (defaults to -50) and omit `INTERFACE`.

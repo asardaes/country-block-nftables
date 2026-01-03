@@ -6,6 +6,7 @@ services:
     environment:
       INTERFACE: ens3
       COUNTRIES: "mx de"
+      COUNTRIES_STRICT: "mx"
     volumes:
       - ./tmp:/tmp
     cap_add:
