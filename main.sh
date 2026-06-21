@@ -14,7 +14,10 @@ fi
 trap "set +e; nft destroy table $TABLE_FAMILY countryblock;"' kill -INT $!; exit 0' INT TERM EXIT
 
 curl_dl() {
-    curl -fsS -m 5 "$1" -o "$2" -z "$2" || return 1
+    if ! curl -fsS -m 5 "$1" -o "$2" -z "$2"; then
+        mv -f "$2" "${2}.fail"
+        return 1
+    fi
 }
 
 process_zone_file() {
